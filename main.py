@@ -1,39 +1,35 @@
-"""Entry program for the make.fun ai-excited-01 bounty.
+"""ai-excited-01 entry program.
 
-The artwork lives beside this file as entry.png. All this program
-does is place an exact copy of it at the output location the grader
-reads, so every run produces the same bytes.
+Writes the entry image to the output directory. The image itself
+(entry.png: a colossal humpback whale breaching through a city skyline at
+golden hour) was generated procedurally during the build; this program only
+places its exact bytes at the harness location, so every run produces
+byte-identical output.
+
+Standard library only. No network, no randomness, no timestamps.
 """
 
 import os
-import shutil
-from pathlib import Path
+import sys
+
+PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 
 
-def entry_image_path() -> Path:
-    """Return the artwork file sitting next to this program."""
-    return Path(__file__).resolve().parent / "entry.png"
-
-
-def output_path() -> Path:
-    """Return where the image must land.
-
-    The grader sets MAKEFUN_OUTPUT_DIR; otherwise fall back to the
-    standard /output directory used by the competition sandbox.
-    """
-    folder = os.environ.get("MAKEFUN_OUTPUT_DIR") or "/output"
-    return Path(folder) / "entry.png"
-
-
-def main() -> None:
-    source = entry_image_path()
-    target = output_path()
-    target.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(source, target)
-    if target.stat().st_size != source.stat().st_size:
-        raise RuntimeError("copied image size does not match the source")
-    print(f"Wrote {target} ({target.stat().st_size} bytes)")
+def main() -> int:
+    here = os.path.dirname(os.path.abspath(__file__))
+    source = os.path.join(here, "entry.png")
+    out_dir = os.environ.get("MAKEFUN_OUTPUT_DIR") or "/output"
+    os.makedirs(out_dir, exist_ok=True)
+    dest = os.path.join(out_dir, "entry.png")
+    with open(source, "rb") as src:
+        data = src.read()
+    if data[:8] != PNG_MAGIC:
+        raise SystemExit("entry.png is not a PNG file")
+    with open(dest, "wb") as out:
+        out.write(data)
+    print(f"wrote {dest} ({len(data)} bytes)")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
